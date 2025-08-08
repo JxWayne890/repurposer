@@ -1,0 +1,388 @@
+{
+  "name": "repurposer-ui-v3",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0"
+  }
+}
+
+# === FILE: tsconfig.json ===
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}
+
+# === FILE: vite.config.ts ===
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()]
+});
+
+# === FILE: index.html ===
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Repurposer UI v3</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+# === FILE: .env ===
+VITE_WEBHOOK_URL=https://providersystem.loca.lt
+VITE_WEBHOOK_PATH_TEST=/webhook-test/0fc953b7-bce2-44e8-abed-e12baf702e68
+VITE_WEBHOOK_PATH_ACTIVE=/webhook/0fc953b7-bce2-44e8-abed-e12baf702e68
+
+# === FILE: src/main.tsx ===
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./app.css";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+# === FILE: src/types.ts ===
+export type Aspect = "9:16" | "16:9" | "1:1";
+
+export interface RequestPayload {
+  youtubeUrl: string;
+  maxClipLength: number;
+  aspectRatio: Aspect;
+  removeFillerWords: boolean;
+}
+
+export interface Clip {
+  topic?: string;
+  start?: string;
+  end?: string;
+  text?: string;      // some backends call this 'text'
+  caption?: string;   // some backends call this 'caption'
+  file?: string;
+  videoUrl?: string;
+  url?: string;       // generic link
+}
+
+export interface ApiResponse {
+  status?: "queued" | "processing" | "done" | "error";
+  error?: string;
+  clips?: Clip[];
+  [k: string]: any;
+}
+
+# === FILE: src/utils/copy.ts ===
+export async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text ?? "");
+    return true;
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = text ?? "";
+    ta.style.position = "fixed";
+    ta.style.top = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); return true; }
+    finally { document.body.removeChild(ta); }
+  }
+}
+
+# === FILE: src/app.css ===
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; background: #f7f7f8; color: #111; }
+.app { max-width: 960px; margin: 40px auto; padding: 16px; }
+.app-header { margin-bottom: 12px; }
+.title { margin: 0 0 6px; font-size: 26px; }
+.subtitle { margin: 0; color: #555; font-size: 14px; }
+.main-card { background: #fff; border: 1px solid #e6e6e6; border-radius: 12px; padding: 16px; }
+.section { margin-bottom: 16px; }
+.form-grid { display: grid; gap: 12px; }
+.form-row { display: grid; gap: 6px; }
+input[type="text"], input[type="number"], select {
+  width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; background: #fff;
+}
+.checkbox-row { display: flex; gap: 18px; align-items: center; justify-content: space-between; }
+.checkbox { display: inline-flex; align-items: center; gap: 8px; }
+.small-note { font-size: 12px; color: #666; margin-top: 6px; }
+.actions { margin-top: 8px; }
+.primary { padding: 10px 14px; border-radius: 8px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; }
+.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.divider { margin: 16px 0; border: none; height: 1px; background: #eee; }
+.error-box { background: #fee; border: 1px solid #f99; color: #900; border-radius: 8px; padding: 10px; }
+.results .panel { background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 10px; margin-top: 12px; }
+.json { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+.clip-grid { display: grid; gap: 12px; }
+.clip-card { border: 1px solid #e3e3e3; border-radius: 10px; padding: 12px; background: #fff; }
+.clip-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.clip-link { text-decoration: none; }
+.copy { padding: 6px 10px; border-radius: 8px; border: 1px solid #999; background: #fff; cursor: pointer; }
+.caption { margin-top: 8px; line-height: 1.4; }
+
+# === FILE: src/App.tsx ===
+import React, { useEffect, useMemo, useState } from "react";
+import type { ApiResponse, Clip, RequestPayload } from "./types";
+import { copyToClipboard } from "./utils/copy";
+
+const WEBHOOK_URL = import.meta.env.VITE_WEBHOOK_URL as string | undefined;
+const WEBHOOK_PATH_TEST = import.meta.env.VITE_WEBHOOK_PATH_TEST as string | undefined;
+const WEBHOOK_PATH_ACTIVE = import.meta.env.VITE_WEBHOOK_PATH_ACTIVE as string | undefined;
+
+export default function App() {
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [maxClipLength, setMaxClipLength] = useState<number>(60);
+  const [aspectRatio, setAspectRatio] = useState<"9:16" | "16:9" | "1:1">("9:16");
+  const [removeFillerWords, setRemoveFillerWords] = useState(true);
+  const [useActiveWorkflow, setUseActiveWorkflow] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [response, setResponse] = useState<ApiResponse | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!WEBHOOK_URL) console.warn("VITE_WEBHOOK_URL is missing.");
+    if (!WEBHOOK_PATH_TEST) console.warn("VITE_WEBHOOK_PATH_TEST is missing.");
+    if (!WEBHOOK_PATH_ACTIVE) console.warn("VITE_WEBHOOK_PATH_ACTIVE is missing.");
+  }, []);
+
+  const selectedPath = useMemo(() => {
+    const path = useActiveWorkflow ? WEBHOOK_PATH_ACTIVE : WEBHOOK_PATH_TEST;
+    return path ?? "";
+  }, [useActiveWorkflow]);
+
+  const endpoint = useMemo(() => {
+    if (!WEBHOOK_URL || !selectedPath) return "";
+    const base = WEBHOOK_URL.endsWith("/") ? WEBHOOK_URL.slice(0, -1) : WEBHOOK_URL;
+    const path = selectedPath.startsWith("/") ? selectedPath : `/${selectedPath}`;
+    return `${base}${path}`;
+  }, [selectedPath]);
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setResponse(null);
+
+    try {
+      if (!endpoint) throw new Error("Webhook URL is not configured. Check your .env values.");
+
+      const payload: RequestPayload = {
+        youtubeUrl: youtubeUrl.trim(),
+        maxClipLength: Number(maxClipLength),
+        aspectRatio,
+        removeFillerWords
+      };
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const text = await res.text();
+      let data: ApiResponse | null = null;
+      try {
+        data = text ? (JSON.parse(text) as ApiResponse) : ({} as ApiResponse);
+      } catch {
+        console.warn("Non-JSON response received from API.");
+      }
+
+      if (!res.ok) {
+        setError(`Request failed (${res.status}): ${res.statusText}`);
+      }
+
+      if (data) setResponse(data);
+    } catch (err: any) {
+      setError(err?.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCopy(text?: string, idx?: number) {
+    const source = text ?? "";
+    const ok = await copyToClipboard(source);
+    if (ok && typeof idx === "number") {
+      setCopiedIdx(idx);
+      window.setTimeout(() => setCopiedIdx(null), 1200);
+    }
+  }
+
+  const clipUrl = (c: Clip) => c.file || c.videoUrl || c.url || "#";
+  const clipCaption = (c: Clip) => c.caption ?? c.text ?? "";
+
+  return (
+    <div className="app">
+      <header className="app-header" role="banner">
+        <div>
+          <h1 className="title">Repurposer UI v3 — YouTube → Clips</h1>
+          <p className="subtitle">Submit a YouTube URL, choose options, and generate clip candidates.</p>
+        </div>
+      </header>
+
+      <main role="main" className="main-card" aria-live="polite">
+        <section className="section" aria-labelledby="form-heading">
+          <h2 id="form-heading" style={{position:'absolute',left:'-9999px'}}>Processing Request Form</h2>
+          <form onSubmit={onSubmit}>
+            <div className="form-grid">
+              <div className="form-row">
+                <label htmlFor="youtube">YouTube URL</label>
+                <input
+                  id="youtube"
+                  type="text"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-row">
+                <label htmlFor="maxlen">Max Clip Length (seconds)</label>
+                <input
+                  id="maxlen"
+                  type="number"
+                  min={10}
+                  max={180}
+                  step={5}
+                  value={maxClipLength}
+                  onChange={(e) => setMaxClipLength(Number(e.target.value))}
+                  required
+                />
+              </div>
+
+              <div className="form-row">
+                <label htmlFor="ratio">Aspect Ratio</label>
+                <select id="ratio" value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value as any)}>
+                  <option value="9:16">9:16</option>
+                  <option value="16:9">16:9</option>
+                  <option value="1:1">1:1</option>
+                </select>
+              </div>
+
+              <div className="checkbox-row">
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={removeFillerWords}
+                    onChange={(e) => setRemoveFillerWords(e.target.checked)}
+                  />
+                  Remove Filler Words
+                </label>
+
+                <div>
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={useActiveWorkflow}
+                      onChange={(e) => setUseActiveWorkflow(e.target.checked)}
+                    />
+                    Use Active Workflow
+                  </label>
+                  <div className="small-note">Endpoint: <code>{endpoint || "Missing .env vars"}</code></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="actions">
+              <button className="primary" type="submit" disabled={loading}>
+                {loading ? "Processing…" : "Submit"}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <hr className="divider" />
+
+        <section className="section" aria-labelledby="results-heading">
+          <h2 id="results-heading" style={{position:'absolute',left:'-9999px'}}>Results</h2>
+
+          {error && <div className="error-box" role="alert">{error}</div>}
+
+          {response && (
+            <div className="results" style={{marginTop: error ? 14 : 0}}>
+              <div className="panel" aria-label="Raw JSON">
+                <pre className="json">{JSON.stringify(response, null, 2)}</pre>
+              </div>
+
+              <div className="panel" aria-label="Clip Cards">
+                <div className="clip-grid">
+                  {(response.clips ?? []).map((clip, idx) => (
+                    <article className="clip-card" key={idx}>
+                      <div className="clip-header">
+                        <a className="clip-link" href={clipUrl(clip)} target="_blank" rel="noreferrer noopener">
+                          Open clip ↗
+                        </a>
+                        <button
+                          className="copy"
+                          type="button"
+                          onClick={() => handleCopy(clipCaption(clip), idx)}
+                          aria-live="polite"
+                        >
+                          {copiedIdx === idx ? "Copied" : "Copy caption"}
+                        </button>
+                      </div>
+                      <div className="caption">{clipCaption(clip) || <i style={{color:"#999"}}>No caption</i>}</div>
+                    </article>
+                  ))}
+                  {(!response.clips || response.clips.length === 0) && (
+                    <div style={{color: '#777', fontSize: 13}}>No clips returned.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!error && !response && (
+            <footer className="footer-note">Results will appear here after submission.</footer>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+# === FILE: README.md ===
+# Repurposer UI v3
+
+A minimal Vite + React + TypeScript frontend that posts to an n8n webhook and shows the JSON response.
+
+## Setup
+1) Create the folder and add files  
+2) Install deps:
